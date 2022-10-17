@@ -1,148 +1,173 @@
 # Importing library
 import math
 import random
-import csv
- 
- 
-# the categorical class names are changed to numberic data
-# eg: yes and no encoded to 1 and 0
-def encode_class(mydata):
-    classes = []
-    for i in range(len(mydata)):
-        if mydata[i][-1] not in classes:
-            classes.append(mydata[i][-1])
-    for i in range(len(classes)):
-        for j in range(len(mydata)):
-            if mydata[j][-1] == classes[i]:
-                mydata[j][-1] = i
-    return mydata           
-             
- 
-# Splitting the data
-def splitting(mydata, ratio):
-    train_num = int(len(mydata) * ratio)
-    train = []
-    # initially testset will have all the dataset
-    test = list(mydata)
-    while len(train) < train_num:
-        # index generated randomly from range 0
-        # to length of testset
-        index = random.randrange(len(test))
-        # from testset, pop data rows and put it in train
-        train.append(test.pop(index))
-    return train, test
- 
- 
-# Group the data rows under each class yes or
-# no in dictionary eg: dict[yes] and dict[no]
-def groupUnderClass(mydata):
-      dict = {}
-      for i in range(len(mydata)):
-          if (mydata[i][-1] not in dict):
-              dict[mydata[i][-1]] = []
-          dict[mydata[i][-1]].append(mydata[i])
-      return dict
- 
- 
-# Calculating Mean
-def mean(numbers):
-    return sum(numbers) / float(len(numbers))
- 
-# Calculating Standard Deviation
-def std_dev(numbers):
-    avg = mean(numbers)
-    variance = sum([pow(x - avg, 2) for x in numbers]) / float(len(numbers) - 1)
-    return math.sqrt(variance)
- 
-def MeanAndStdDev(mydata):
-    info = [(mean(attribute), std_dev(attribute)) for attribute in zip(*mydata)]
-    # eg: list = [ [a, b, c], [m, n, o], [x, y, z]]
-    # here mean of 1st attribute =(a + m+x), mean of 2nd attribute = (b + n+y)/3
-    # delete summaries of last class
-    del info[-1]
-    return info
- 
-# find Mean and Standard Deviation under each class
-def MeanAndStdDevForClass(mydata):
-    info = {}
-    dict = groupUnderClass(mydata)
-    for classValue, instances in dict.items():
-        info[classValue] = MeanAndStdDev(instances)
-    return info
- 
- 
-# Calculate Gaussian Probability Density Function
-def calculateGaussianProbability(x, mean, stdev):
-    expo = math.exp(-(math.pow(x - mean, 2) / (2 * math.pow(stdev, 2))))
-    return (1 / (math.sqrt(2 * math.pi) * stdev)) * expo
- 
- 
-# Calculate Class Probabilities
-def calculateClassProbabilities(info, test):
-    probabilities = {}
-    for classValue, classSummaries in info.items():
-        probabilities[classValue] = 1
-        for i in range(len(classSummaries)):
-            mean, std_dev = classSummaries[i]
-            x = test[i]
-            probabilities[classValue] *= calculateGaussianProbability(x, mean, std_dev)
-    return probabilities
- 
- 
-# Make prediction - highest probability is the prediction
-def predict(info, test):
-    probabilities = calculateClassProbabilities(info, test)
-    bestLabel, bestProb = None, -1
-    for classValue, probability in probabilities.items():
-        if bestLabel is None or probability > bestProb:
-            bestProb = probability
-            bestLabel = classValue
-    return bestLabel
- 
- 
-# returns predictions for a set of examples
-def getPredictions(info, test):
-    predictions = []
-    for i in range(len(test)):
-        result = predict(info, test[i])
-        predictions.append(result)
-    return predictions
- 
-# Accuracy score
-def accuracy_rate(test, predictions):
-    correct = 0
-    for i in range(len(test)):
-        if test[i][-1] == predictions[i]:
-            correct += 1
-    return (correct / float(len(test))) * 100.0
- 
- 
-# driver code
- 
-# add the data path in your system
-filename = r'E:\user\MACHINE LEARNING\machine learning algos\Naive bayes\filedata.csv'
- 
- 
-# load the file and store it in mydata list
-mydata = csv.reader(open(filename, "rt"))
-mydata = list(mydata)
-mydata = encode_class(mydata)
-for i in range(len(mydata)):
-    mydata[i] = [float(x) for x in mydata[i]]
- 
-     
-# split ratio = 0.7
-# 70% of data is training data and 30% is test data used for testing
-ratio = 0.7
-train_data, test_data = splitting(mydata, ratio)
-print('Total number of examples are: ', len(mydata))
-print('Out of these, training examples are: ', len(train_data))
-print("Test examples are: ", len(test_data))
- 
-# prepare model
-info = MeanAndStdDevForClass(train_data)
- 
-# test model
-predictions = getPredictions(info, test_data)
-accuracy = accuracy_rate(test_data, predictions)
-print("Accuracy of your model is: ", accuracy)
+
+FEATURES_NAMES = ['white_king_column', 'white_king_row', 'white_rook_column',
+                  'white_rook_row', 'black_king_column', 'black_king_row']
+
+ENCODED_VALUES = {
+  'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5, 'f': 6, 'g': 7, 'h': 8,
+  '1': 1, '2': 2, '3': 3, '4': 4, '5': 5,  '6': 6, '7': 7, '8': 8
+}
+
+# convert line formatted in a dictionary
+def decodeLine(line):
+  values = line.split(',')
+  data = {}
+  data['white_king_column'] = values[0]
+  data['white_king_row'] = values[1]
+  data['white_rook_column'] = values[2]
+  data['white_rook_row'] = values[3]
+  data['black_king_column'] = values[4]
+  data['black_king_row'] = values[5]
+  data['result'] = values[6][:-1]
+
+  return data
+
+# read database
+def readData():
+  filename = r'Data/krkopt.data'
+  f = open(filename, "r")
+
+  dataset = []
+
+  line = f.readline()
+  while line != "":
+    dataset.append(decodeLine(line))
+    line = f.readline()
+  
+  return dataset
+
+# split dataset into train and test
+def splitDataset(dataset, ratio):
+  random.shuffle(dataset)
+
+  sz = len(dataset)
+  cut = int(sz*ratio)
+
+  train_data = dataset[:cut]
+  test_data = dataset[cut:]
+
+  return train_data, test_data
+
+# encode values of rows/columns to [1..8]
+def encodeValue(value):
+  return ENCODED_VALUES[value]
+
+# get meand and standart deviation of a set of data for a feature
+def getMeanAndStdDeviation(dots):
+  avg = sum(dots)/ float(len(dots))
+  variance = sum([pow(avg - x, 2) for x in dots]) / float(len(dots) - 1)
+  dev = math.sqrt(variance)
+
+  return (avg, dev)
+
+# trainning ML with dataset, getting some information
+# in this case, we get mean and standart deviation for each result and features
+# the returned dictionary will be in this format:
+#   [result] = {
+#      feature1: (mean, stdDev),
+#      feature2: (mean, stdDev),
+#      feature3: (mean, stdDev)
+#   }
+def getInformation(dataset):
+  raw_info = {}
+
+  for data in dataset:
+    result = data['result']
+
+    if result not in raw_info.keys():
+      raw_info[result] = {}
+      for name in FEATURES_NAMES:
+        raw_info[result][name] = []
+
+    for name in FEATURES_NAMES:
+      raw_info[result][name].append(encodeValue(data[name]))
+  
+  info = {}
+  for tag in raw_info.keys():
+    info[tag] = {}
+    for feature in FEATURES_NAMES:
+      info[tag][feature] = getMeanAndStdDeviation(raw_info[tag][feature])
+  
+  return info
+
+# calculate the probability of x be a part of this gaussian function
+def calcGaussianProbability(avg, dev, x):
+  if dev == 0.0:
+    return 0.0
+
+  expo = math.exp(-math.pow(x - avg, 2)/(2.0 * pow(dev, 2)))
+  return expo / float(dev * math.sqrt(2.0 * math.pi))
+
+# for an specific label/class, calc the prob this single data be group of this class
+def calcClassProbability(summaries, data):
+  prob = 1.0
+
+  for name in FEATURES_NAMES:
+    avg, dev = summaries[name]
+    value = encodeValue(data[name])
+
+    prob *= calcGaussianProbability(avg, dev, value)
+  
+  return prob
+
+# predict label for a unique data
+def getPredict(info, data):
+  candidates = []
+
+  for label, summaries in info.items():
+    candidates.append((label, calcClassProbability(summaries, data)))
+  
+  bestLabel = None
+  maxProb = None
+
+  for label, prob in candidates:
+    if maxProb == None or maxProb < prob:
+      maxProb = prob
+      bestLabel = label
+  
+  return bestLabel
+
+# predict results for an specific dataset
+def getPredictions(info, dataset):
+  predictions = []
+  
+  for data in dataset:
+    predict = {
+      'data': data,
+      'label': getPredict(info, data)
+    }
+
+    predictions.append(predict)
+
+  hits = 0
+
+  for predict in predictions:
+    if predict['data']['result'] == predict['label']:
+      hits += 1
+
+  acc = hits / float(len(dataset))
+
+  return predictions, acc
+
+def main():
+  # add the data path in your system
+  dataset = readData()
+
+  RATIO = 0.7
+  train_data, test_data = splitDataset(dataset, RATIO)
+
+  print("Total number of examples are:", len(dataset))
+  print("Size of train data:", len(train_data))
+  print("Size of test data:", len(test_data))
+
+  dataset_information = getInformation(train_data)
+  prediction, accuracy = getPredictions(dataset_information, test_data)
+
+  print("================")
+  percentage = round(float(accuracy * 100), 2)
+  print("ran test data with", percentage, "of accuracy")
+
+if __name__ == "__main__":
+  main()
