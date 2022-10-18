@@ -2,6 +2,7 @@
 import math
 import random
 import matplotlib.pyplot as plt
+import numpy as np
 
 FEATURES_NAMES = ['white_king_column', 'white_king_row', 'white_rook_column',
                   'white_rook_row', 'black_king_column', 'black_king_row']
@@ -155,6 +156,8 @@ def getPredictions(info, dataset):
 def viewData(dataset):
   histogram = {}
 
+  coordinates = [1, 2, 3, 4, 5, 6, 7, 8]
+
   for name in FEATURES_NAMES:
     histogram[name] = [0, 0, 0, 0, 0, 0, 0, 0]
 
@@ -163,14 +166,29 @@ def viewData(dataset):
       if key == 'result':
         continue
       
-      histogram[key][encodeValue(value) - 1] += 1
+      histogram[key][encodeValue(def view3D(dataset):
+  fig = plt.figure()
+  x = np.random.normal(1, 8, 30)
+  y = np.random.normal(1, 8, 30)
+ 
+  colour = []
+
+  for data in dataset:
+    
+
+  plt.scatter(x, y, s = 50, c = colour, alpha = 0.8)
+  plt.colorbar()
+  plt.show()value) - 1] += 1
   
   for feature, l in histogram.items():
     title = "Histograma para o atributo: " + feature
-    plt.title(title)
-    plt.xlabel('Frequência')
-    plt.ylabel('Valor no tabuleiro')
-    plt.hist(feature)
+
+    fig, ax = plt.subplots()
+
+    ax.set_title(title)
+    ax.set_ylabel('Frequência')
+    ax.set_xlabel('Valor no tabuleiro')
+    ax.bar(coordinates, l)
     plt.show()
 
 def main():
@@ -185,8 +203,9 @@ def main():
   print("Size of test data:", len(test_data))
 
   dataset_information = getInformation(train_data)
-  viewData(train_data)
+  #viewData(train_data)
   prediction, accuracy = getPredictions(dataset_information, test_data)
+  view3D(test_data)
 
   print("================")
   percentage = round(float(accuracy * 100), 2)
