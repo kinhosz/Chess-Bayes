@@ -1,6 +1,7 @@
 # Importing library
 import math
 import random
+import matplotlib.pyplot as plt
 
 FEATURES_NAMES = ['white_king_column', 'white_king_row', 'white_rook_column',
                   'white_rook_row', 'black_king_column', 'black_king_row']
@@ -151,6 +152,27 @@ def getPredictions(info, dataset):
 
   return predictions, acc
 
+def viewData(dataset):
+  histogram = {}
+
+  for name in FEATURES_NAMES:
+    histogram[name] = [0, 0, 0, 0, 0, 0, 0, 0]
+
+  for data in dataset:
+    for key, value in data.items():
+      if key == 'result':
+        continue
+      
+      histogram[key][encodeValue(value) - 1] += 1
+  
+  for feature, l in histogram.items():
+    title = "Histograma para o atributo: " + feature
+    plt.title(title)
+    plt.xlabel('Frequência')
+    plt.ylabel('Valor no tabuleiro')
+    plt.hist(feature)
+    plt.show()
+
 def main():
   # add the data path in your system
   dataset = readData()
@@ -163,6 +185,7 @@ def main():
   print("Size of test data:", len(test_data))
 
   dataset_information = getInformation(train_data)
+  viewData(train_data)
   prediction, accuracy = getPredictions(dataset_information, test_data)
 
   print("================")
